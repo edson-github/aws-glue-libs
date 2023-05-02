@@ -27,7 +27,9 @@ def boto_client_error(logger: Logger, message: str = ""):
                     logger.error('Request ID: {}'.format(error.response['ResponseMetadata']['RequestId']))
                     logger.error('Http code: {}'.format(error.response['ResponseMetadata']['HTTPStatusCode']))
                 else:
-                    logger.error(f"boto3 clientError raised in function {func.__name__}" + repr(error) + message)
+                    logger.error(
+                        f"boto3 clientError raised in function {func.__name__}{repr(error)}{message}"
+                    )
                 raise
             except NoCredentialsError as error:
                 logger.error(f"boto3 NoCredentialsError raised in function {func.__name__}: {repr(error)}"
@@ -35,4 +37,5 @@ def boto_client_error(logger: Logger, message: str = ""):
                 raise
 
         return wrapper
+
     return decorator

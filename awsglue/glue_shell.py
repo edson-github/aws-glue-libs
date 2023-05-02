@@ -31,8 +31,7 @@ welcome_msg = """Welcome to
 """
 
 print(welcome_msg)
-print("Using Python version %s (%s, %s)" % (
-    platform.python_version(),
-    platform.python_build()[0],
-    platform.python_build()[1]))
+print(
+    f"Using Python version {platform.python_version()} ({platform.python_build()[0]}, {platform.python_build()[1]})"
+)
 print("GlueContext available as glueContext.")

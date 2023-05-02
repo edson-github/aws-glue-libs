@@ -102,9 +102,10 @@ def extract_registry_id(ecr_root: str) -> str:
     Extract AWS account id of the ECR registry from its root address
     e.g. xxxxxxxxxxxx.dkr.ecr.us-east-1.amazonaws.com
     """
-    match = re.match(r"^(\d{12})\.dkr\.ecr\.[a-z]{2}-[a-z]{4}-\d\.amazonaws\.com$", ecr_root)
-    if match:
-        return match.group(1)
+    if match := re.match(
+        r"^(\d{12})\.dkr\.ecr\.[a-z]{2}-[a-z]{4}-\d\.amazonaws\.com$", ecr_root
+    ):
+        return match[1]
     else:
         raise ValueError(f"Invalid ECR url supplied, couldn't find aws account from {ecr_root}.")
 
@@ -145,8 +146,7 @@ def get_docker_manifest(ecr_url: str, header: Dict[str, str]) -> Dict[str, Any]:
     ecr_root, image_name, tag = parse_ecr_url(ecr_url)
     manifest_url = f"https://{ecr_root}/v2/{image_name}/manifests/{tag}"
     logger.info(f"Calling ECR HTTP API to get manifest of {ecr_url}.")
-    manifest = send_get_request(manifest_url, header).json()
-    return manifest
+    return send_get_request(manifest_url, header).json()
 
 
 def download_and_unpack_docker_layer(ecr_url: str, digest: str, dir_prefix: str, header: Dict[str, str]) -> None:
@@ -242,9 +242,8 @@ def collect_files_by_suffix(input_dir: str, suffix: str) -> List[str]:
         for file in filenames:
             if not file.endswith(suffix):
                 continue
-            else:
-                abs_path = os.path.abspath(os.path.join(dirpath, file))
-                res.append(abs_path)
+            abs_path = os.path.abspath(os.path.join(dirpath, file))
+            res.append(abs_path)
     return res
 
 
@@ -280,7 +279,7 @@ def download_jars_per_connection(conn: str, region: str, endpoint: str, proxy: s
     elif connection["Connection"]["ConnectionType"] != MARKETPLACE:
         logger.warning(f"Connection {conn} is not a Marketplace connection, skip jar downloading for it")
         return []
-        
+
     # get the connection classname
     if "CONNECTOR_CLASS_NAME" in connection["Connection"]["ConnectionProperties"]:
         driver_name = connection["Connection"]["ConnectionProperties"]["CONNECTOR_CLASS_NAME"]
@@ -320,7 +319,7 @@ def download_jars_per_connection(conn: str, region: str, endpoint: str, proxy: s
         }\n""" % (driver_name, oem_key, oem_value)
         with open("/tmp/glue-marketplace.conf", 'a') as opened_file:
             opened_file.write(output)
-        logger.info(f"OEM information is written.")
+        logger.info("OEM information is written.")
 
     if not res:
         logger.warning(f"found no connector jars from {ecr_url} provided by {conn}, please contact AWS support of"

@@ -71,7 +71,7 @@ class DynamicFrame(object):
             try:
                 self._schema = _deserialize_json_string(self._jdf.schema().toString())
             except AttributeError as e:
-                raise Exception("Unable to parse datatype from schema. %s" % e)
+                raise Exception(f"Unable to parse datatype from schema. {e}")
         return self._schema
 
     def show(self, num_rows=20):
@@ -79,18 +79,19 @@ class DynamicFrame(object):
 
     def filter(self, f, transformation_ctx="", info="", stageThreshold=0, totalThreshold=0):
         def wrap_dict_with_dynamic_records(x):
-                rec = _create_dynamic_record(x["record"])
-                try:
-                    return f(rec)
-                except Exception as E:
-                    if isinstance(E, KeyError) or isinstance(E, ValueError) or isinstance(E, TypeError):
-                        return False
-                    x['isError'] = True
-                    x['errorMessage'] = str(E)
-                    return True
+            rec = _create_dynamic_record(x["record"])
+            try:
+                return f(rec)
+            except Exception as E:
+                if isinstance(E, (KeyError, ValueError, TypeError)):
+                    return False
+                x['isError'] = True
+                x['errorMessage'] = str(E)
+                return True
 
         def func(iterator):
             return ifilter(wrap_dict_with_dynamic_records, iterator)
+
         return self.mapPartitions(func, True, transformation_ctx, info, stageThreshold, totalThreshold)
 
     def mapPartitions(self, f, preservesPartitioning=True, transformation_ctx="", info="", stageThreshold=0, totalThreshold=0):
@@ -140,7 +141,7 @@ class DynamicFrame(object):
 
         for option in options:
             if option.action != "KeepAsStruct" and option.target is None:
-                raise Exception("Missing target type for resolve action %s." % option.action)
+                raise Exception(f"Missing target type for resolve action {option.action}.")
 
             scala_options.append(self.glue_ctx.convert_resolve_option(option.path, option.action, option.target))
 
@@ -342,13 +343,19 @@ class DynamicFrame(object):
                                                               makeOptions(self._sc, options),
                                                               transformation_ctx, _call_site(self._sc, callsite(), info),
                                                               long(stageThreshold), long(totalThreshold)))
-        return DynamicFrameCollection(dict((df.getName(), DynamicFrame(df, self.glue_ctx, df.getName())) for df in _rFrames), self.glue_ctx)
+        return DynamicFrameCollection(
+            {
+                df.getName(): DynamicFrame(df, self.glue_ctx, df.getName())
+                for df in _rFrames
+            },
+            self.glue_ctx,
+        )
 
     def applyMapping(self, *args, **kwargs):
         # In a previous version we passed args[1:] and in our tests we passed
         # the DynamicFrame as the first argument. This checks for that case
         # to avoid regressions.
-        if len(args) > 0 and isinstance(args[0], DynamicFrame):
+        if args and isinstance(args[0], DynamicFrame):
             return self.apply_mapping(*(args[1:]), **kwargs)
         else:
             return self.apply_mapping(*args, **kwargs)
@@ -562,10 +569,9 @@ class DynamicFrameCollection(object):
         """
         new_dict = {}
         for k,v in iteritems(self._df_dict):
-            res = callable(v, transformation_ctx+':'+k)
+            res = callable(v, f'{transformation_ctx}:{k}')
             if not isinstance(res, DynamicFrame):
-                raise TypeError("callable must return a DynamicFrame. "\
-                                "Got {}".format(str(type(res))))
+                raise TypeError(f"callable must return a DynamicFrame. Got {str(type(res))}")
             new_dict[k] = res
 
         return DynamicFrameCollection(new_dict, self._glue_ctx)
@@ -579,16 +585,16 @@ class DynamicFrameCollection(object):
         new_dict = {}
 
         for frame in itervalues(self._df_dict):
-            res = f(frame, transformation_ctx+':'+frame.name)
+            res = f(frame, f'{transformation_ctx}:{frame.name}')
 
             if isinstance(res, DynamicFrame):
                 new_dict[res.name] = res
             elif isinstance(res, DynamicFrameCollection):
-                new_dict.update(res)
+                new_dict |= res
             else:
-                raise TypeError("Function argument to flatmap must return "\
-                                "DynamicFrame or DynamicFrameCollection."\
-                                " Got {}".format(str(type(res))))
+                raise TypeError(
+                    f"Function argument to flatmap must return DynamicFrame or DynamicFrameCollection. Got {str(type(res))}"
+                )
 
         return DynamicFrameCollection(new_dict, self._glue_ctx)
 

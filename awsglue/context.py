@@ -95,8 +95,13 @@ class GlueContext(SQLContext):
         """
         options["callSite"] = callsite()
         compressionType = options.get("compressionType", "")
-        if compressionType in self.Unsupported_Compression_Types and format == None:
-            raise Exception("When using compressionType {}, the format parameter must be specified.".format(compressionType))
+        if (
+            compressionType in self.Unsupported_Compression_Types
+            and format is None
+        ):
+            raise Exception(
+                f"When using compressionType {compressionType}, the format parameter must be specified."
+            )
         #if get unsupported compression type, fallback to use spark sql datasource.
         if((format and format.lower() in self.Spark_SQL_Formats) or (compressionType in self.Unsupported_Compression_Types)):
             connection_type = format
@@ -113,7 +118,7 @@ class GlueContext(SQLContext):
                 prefix = re.sub('[:/.]', '', prefix)
 
         # in case paths is not in options or no common prefix
-        if prefix == None:
+        if prefix is None:
             prefix = str(uuid.uuid1())
             prefix = re.sub('[-]', '_', prefix)
 
@@ -140,7 +145,7 @@ class GlueContext(SQLContext):
                 prefix = re.sub('[:/.]', '', prefix)
 
         # in case paths is not in options or no common prefix
-        if prefix == None:
+        if prefix is None:
             prefix = str(uuid.uuid1())
             prefix = re.sub('[-]', '_', prefix)
 
@@ -443,10 +448,11 @@ class GlueContext(SQLContext):
             if target is None or not isinstance(target, DataType):
                 raise ValueError("Target type must be specified with project action.")
 
-            return self._jvm.ResolveSpec.apply(path, "project:{}".format(target.typeName()))
+            return self._jvm.ResolveSpec.apply(path, f"project:{target.typeName()}")
         else:
-            raise ValueError("Invalid resolve action {}. ".format(action) +
-                             "Action must be one of KeepAsStruct and Project.")
+            raise ValueError(
+                f"Invalid resolve action {action}. Action must be one of KeepAsStruct and Project."
+            )
 
     def extract_jdbc_conf(self, connection_name, catalog_id=None):
         """
@@ -586,14 +592,16 @@ class GlueContext(SQLContext):
 
         tableId = str(uuid.uuid4()).replace("-", "")
         writer = frame.writeStream\
-            .trigger(processingTime=windowSize)\
-            .queryName(tableId)\
-            .format("memory")
+                .trigger(processingTime=windowSize)\
+                .queryName(tableId)\
+                .format("memory")
         if batch_function is not None:
             writer = writer.foreachBatch(batch_function)
 
         query = writer.start()
-        resultDF = self.spark_session.sql("select * from " + tableId + " limit " + str(recordPollingLimit))
+        resultDF = self.spark_session.sql(
+            f"select * from {tableId} limit {recordPollingLimit}"
+        )
         time.sleep(pollingTimeInMs / 1000)
         query.stop()
         return DynamicFrame.fromDF(resultDF, self, tableId)
