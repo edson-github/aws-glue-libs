@@ -29,7 +29,9 @@ def crawler_backup(glue_context, data, options):
     database_name = options['catalog.database']
 
     # Only get data for this crawler
-    data['table'] = data['table'].filter("parameters.UPDATED_BY_CRAWLER = '%s'" % crawler_name)
+    data['table'] = data['table'].filter(
+        f"parameters.UPDATED_BY_CRAWLER = '{crawler_name}'"
+    )
     data['partition'] = data['partition'].join(data['table'].withColumn('tableName', col('name')), 'tableName', 'leftsemi')
 
     if backup_location is not None:
@@ -42,20 +44,28 @@ def crawler_undo(glue_context, **options):
     database_name = options['catalog.database']
     timestamp = options['timestamp']
     options["catalog.tableVersions"] = True
-    
+
     data = read_from_catalog(glue_context, options)
 
     crawler_backup(glue_context, data, options)
 
     # Find all the table versions for this crawler
-    crawler_tables = data['tableVersion'].select(col("table.updateTime").alias("updateTime"), col("table"), col('table.parameters.UPDATED_BY_CRAWLER')).filter("UPDATED_BY_CRAWLER = '%s'" % crawler_name)
-    
+    crawler_tables = (
+        data['tableVersion']
+        .select(
+            col("table.updateTime").alias("updateTime"),
+            col("table"),
+            col('table.parameters.UPDATED_BY_CRAWLER'),
+        )
+        .filter(f"UPDATED_BY_CRAWLER = '{crawler_name}'")
+    )
+
     # Find the latest previous version of tables for this crawler that were updated or deleted since the last timestamp.
     filtered = crawler_tables.filter("updateTime <= %d" % timestamp).withColumn("filtered_name", col("table.name"))
-    update_times = filtered.groupBy("table.name").max("table.updateTime").withColumnRenamed("max(table.updateTime AS `updateTime`)","time") 
+    update_times = filtered.groupBy("table.name").max("table.updateTime").withColumnRenamed("max(table.updateTime AS `updateTime`)","time")
     joined = filtered.join(update_times, (col("filtered_name") == col("name")) & (col("updateTime") == col("time")), 'inner')
     tables_to_write = joined.select(col("table.*"))
-    
+
     # Find the tables that were created since the last timestamp
     names = crawler_tables.select(col("table.name")).distinct()
     present_before_timestamp = joined.select(col("table.name"))
@@ -82,10 +92,13 @@ def crawler_undo_options(args):
 
     options, unknown = parser.parse_known_args(args)
 
-    if not (options.database_name is not None and options.timestamp is not None):
+    if options.database_name is None or options.timestamp is None:
         import boto3 # Import is done here to ensure script does not fail in case boto3 is not required.
         glue_endpoint = DEFAULT_GLUE_ENDPOINT
-        glue = boto3.client('glue', endpoint_url="https://%s.%s.amazonaws.com" % (glue_endpoint, options.region))
+        glue = boto3.client(
+            'glue',
+            endpoint_url=f"https://{glue_endpoint}.{options.region}.amazonaws.com",
+        )
         crawler = glue.get_crawler(Name=options.crawler_name)['Crawler']
 
     if options.database_name is not None:

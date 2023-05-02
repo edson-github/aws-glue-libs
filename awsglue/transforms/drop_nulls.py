@@ -18,7 +18,7 @@ class DropNullFields(GlueTransform):
     def _find_null_fields(self, ctx, schema, path, output):
         if isinstance(schema, StructType):
             for field in schema:
-                new_path = path + "." if path != "" else path
+                new_path = f"{path}." if path != "" else path
                 self._find_null_fields(ctx, field.dataType, new_path + ctx._jvm.RecordUtils.quoteName(field.name), output)
 
         elif isinstance(schema, ArrayType):

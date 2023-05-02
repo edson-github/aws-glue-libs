@@ -232,10 +232,10 @@ class SplitFields(GlueTransform):
         # Incorporate the existing DynamicFrame name into the new names.
         frame_name = frame.name if len(frame.name) > 0 else "frame"
 
-        if name1 == None:
-            name1 = frame_name + "1"
-        if name2 == None:
-            name2 = frame_name + "2"
+        if name1 is None:
+            name1 = f"{frame_name}1"
+        if name2 is None:
+            name2 = f"{frame_name}2"
 
         return frame.split_fields(paths, name1, name2, transformation_ctx, info, stageThreshold, totalThreshold)
 

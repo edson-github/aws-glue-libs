@@ -62,7 +62,9 @@ def nest_data_frame(data_frame, database_name, entity_type):
     elif entity_type.startswith("database"):
         return data_frame.groupBy().agg(collect_list(struct("*"))).withColumnRenamed(COLLECT_RESULT_NAME, "items").withColumn("type", lit(entity_type))
     else:
-        raise Exception("entity_type %s is not recognized, your backup data may be corrupted..." % entity_type)
+        raise Exception(
+            f"entity_type {entity_type} is not recognized, your backup data may be corrupted..."
+        )
 
 def write_df_to_catalog(data_frame, entity_type, glue_context, options):
     # Check if data frame is empty. There is no "empty" method for data frame, this is the closest we get.

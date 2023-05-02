@@ -36,14 +36,13 @@ class Relationalize(GlueTransform):
     def __call__(self, frame, staging_path=None, name='roottable', options=None, transformation_ctx = "", info="",
         stageThreshold=0, totalThreshold=0):
         options = options or {}
-        # TODO: Remove special handling of staging_path and make it mandatory after TempDir is made a mandatory argument
-        # We are directly accessing the args variable assuming that it is available in the global scope. This is to
-        # maintain backward compatibility with the relationalize call that did not have the mandatory staging_path arg
         if staging_path is None:
             if _global_args['TempDir'] is not None and _global_args['TempDir'] != "":
                 staging_path = _global_args['TempDir']
             else:
-                raise RuntimeError("Unable to set staging_path using args "+str(_global_args))
+                raise RuntimeError(
+                    f"Unable to set staging_path using args {str(_global_args)}"
+                )
         return frame.relationalize(name, staging_path, options, transformation_ctx, info, stageThreshold, totalThreshold)
 
     @classmethod

@@ -49,7 +49,7 @@ class DataType(object):
 
 class AtomicType(DataType):
     def __repr__(self):
-        return "{}({})".format(self.__class__.__name__, self.properties)
+        return f"{self.__class__.__name__}({self.properties})"
 
     @classmethod
     def fromJsonValue(cls, json_value):
@@ -80,9 +80,7 @@ class DecimalType(AtomicType):
         self.scale = scale
 
     def __repr__(self):
-        return "DecimalType({}, {}, {})".format(self.precision,
-                                                self.scale,
-                                                self.properties)
+        return f"DecimalType({self.precision}, {self.scale}, {self.properties})"
 
     def jsonValue(self):
         return dict(list(super(DecimalType, self).jsonValue().items()) +
@@ -100,10 +98,10 @@ class EnumType(AtomicType):
         self.options = options
 
     def __repr__(self):
-        options_str = ",".join(self.options[0:3])
+        options_str = ",".join(self.options[:3])
         if len(self.options) > 3:
-            options_str = options_str + ",..."
-        return "EnumType([{}], {})".format(options_str, self.properties)
+            options_str += ",..."
+        return f"EnumType([{options_str}], {self.properties})"
 
     def jsonValue(self):
         dict(list(super(EnumType, self).jsonValue().items()) +
@@ -151,13 +149,14 @@ class UnknownType(AtomicType):
 class ArrayType(DataType):
 
     def __init__(self, elementType=UnknownType(), properties={}):
-        assert isinstance(elementType, DataType),\
-            "elementType should be DataType. Got" + str(elementType.__class__)
+        assert isinstance(
+            elementType, DataType
+        ), f"elementType should be DataType. Got{str(elementType.__class__)}"
         super(ArrayType, self).__init__(properties)
         self.elementType = elementType
 
     def __repr__(self):
-        return "ArrayType({}, {})".format(self.elementType, self.properties)
+        return f"ArrayType({self.elementType}, {self.properties})"
 
     def jsonValue(self):
         return dict(list(super(ArrayType, self).jsonValue().items()) +
@@ -172,13 +171,14 @@ class ArrayType(DataType):
 class SetType(DataType):
 
     def __init__(self, elementType=UnknownType(), properties={}):
-        assert isinstance(elementType, DataType), \
-            "elementType should be DataType. Got" + str(elementType.__class__)
+        assert isinstance(
+            elementType, DataType
+        ), f"elementType should be DataType. Got{str(elementType.__class__)}"
         super(SetType, self).__init__(properties)
         self.elementType = elementType
 
     def __repr__(self):
-        return "SetType({}, {})".format(self.elementType, self.properties)
+        return f"SetType({self.elementType}, {self.properties})"
 
     def jsonValue(self):
         return dict(list(super(SetType, self).jsonValue().items()) +
@@ -202,9 +202,9 @@ class ChoiceType(DataType):
     def __repr__(self):
         sorted_values = sorted(self.choices.values(),
                                key = lambda x: x.typeName())
-        choice_str = "[{}]".format(",".join([str(c) for c in sorted_values]))
+        choice_str = f'[{",".join([str(c) for c in sorted_values])}]'
 
-        return "ChoiceType({}, {})".format(choice_str, self.properties)
+        return f"ChoiceType({choice_str}, {self.properties})"
 
     def add(self, new_choice):
         if new_choice.typeName() in self.choices:
@@ -238,7 +238,7 @@ class MapType(DataType):
         self.valueType = valueType
 
     def __repr__(self):
-        return "MapType({}, {})".format(self.valueType, self.properties)
+        return f"MapType({self.valueType}, {self.properties})"
 
     def jsonValue(self):
         return dict(list(super(MapType, self).jsonValue().items()) +
@@ -253,10 +253,12 @@ class MapType(DataType):
 class Field(object):
 
     def __init__(self, name, dataType, properties={}):
-        assert isinstance(dataType, DataType),\
-            "dataType should be DataType. Got " + str(dataType.__class__)
-        assert isinstance(name, basestring),\
-            "Field name must be a string. Got " + str(name.__class__)
+        assert isinstance(
+            dataType, DataType
+        ), f"dataType should be DataType. Got {str(dataType.__class__)}"
+        assert isinstance(
+            name, basestring
+        ), f"Field name must be a string. Got {str(name.__class__)}"
 
         # Note this only applies in Python 2.7 if the name is type unicode. In that case
         # we return a str (bytestring) encoded as utf-8. This is the same behavior as
@@ -273,8 +275,7 @@ class Field(object):
                 self.dataType == other.dataType)
 
     def __repr__(self):
-        return "Field({}, {}, {})".format(self.name, self.dataType,
-                                          self.properties)
+        return f"Field({self.name}, {self.dataType}, {self.properties})"
 
     def jsonValue(self):
         return {"name": self.name,
@@ -301,8 +302,7 @@ class StructType(DataType):
         return iter(self.fields)
 
     def __repr__(self):
-        return "StructType([{}], {})".format(
-            ",".join([str(f) for f in self.fields]), self.properties)
+        return f'StructType([{",".join([str(f) for f in self.fields])}], {self.properties})'
 
     def add(self, field):
         assert isinstance(field, Field), "field must be of type Field"
@@ -346,13 +346,13 @@ _atomic_types = [BinaryType, BooleanType, ByteType, DateType, DecimalType,
 _complex_types = [ArrayType, ChoiceType, MapType, StructType, SetType]
 
 
-_atomic_type_map = dict((t.typeName(), t) for t in _atomic_types)
+_atomic_type_map = {t.typeName(): t for t in _atomic_types}
 
 
-_complex_type_map = dict((t.typeName(), t) for t in _complex_types)
+_complex_type_map = {t.typeName(): t for t in _complex_types}
 
 
-_all_type_map = dict((t.typeName(), t) for t in _atomic_types + _complex_types)
+_all_type_map = {t.typeName(): t for t in _atomic_types + _complex_types}
 
 
 def _deserialize_json_string(json_str):
@@ -368,16 +368,8 @@ def _serialize_schema(schema):
     return json.dumps(schema.jsonValue())
 
 def _make_choice(s1, s2):
-    if isinstance(s1, ChoiceType):
-        left_types = s1.choices
-    else:
-        left_types = {s1.typeName(): s1}
-
-    if isinstance(s2, ChoiceType):
-        right_types = s2.choices
-    else:
-        right_types = {s2.typeName(): s2}
-
+    left_types = s1.choices if isinstance(s1, ChoiceType) else {s1.typeName(): s1}
+    right_types = s2.choices if isinstance(s2, ChoiceType) else {s2.typeName(): s2}
     for typecode, datatype in iteritems(left_types):
         if typecode in right_types:
             right_types[typecode] = mergeDataTypes(datatype,
@@ -393,9 +385,9 @@ def _make_choice(s1, s2):
 # Has similar limitations to the Scala version -- does not merge properties,
 # for instance.
 def mergeDataTypes(s1, s2):
-    if isinstance(s1, UnknownType) or isinstance(s1, NullType):
+    if isinstance(s1, (UnknownType, NullType)):
         return s2
-    elif isinstance(s2, UnknownType) or isinstance(s2, NullType):
+    elif isinstance(s2, (UnknownType, NullType)):
         return s1
     elif isinstance(s1, ChoiceType) or isinstance(s2, ChoiceType):
         return _make_choice(s1, s2)
@@ -433,7 +425,7 @@ def mergeDataTypes(s1, s2):
 
 
 def _create_dynamic_record(dynamicRecord):
-    vals = dict()
+    vals = {}
     for k, v in dynamicRecord.items():
         val = v
         if type(v) == dict:

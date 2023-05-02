@@ -24,8 +24,7 @@ def makeOptions(sc, py_obj):
     elif isinstance(py_obj, basestring):
         json_string = py_obj
     else:
-        raise TypeError("Unexpected type " + str(type(py_obj))
-                        + " in makeOptions")
+        raise TypeError(f"Unexpected type {str(type(py_obj))} in makeOptions")
     return sc._jvm.JsonOptions(json_string)
 
 
@@ -80,33 +79,39 @@ def getResolvedOptions(args, options):
     parser = GlueArgumentParser()
 
     if Job.continuation_options()[0][2:] in options:
-        raise RuntimeError("Using reserved arguments " + Job.continuation_options()[0][2:])
+        raise RuntimeError(
+            f"Using reserved arguments {Job.continuation_options()[0][2:]}"
+        )
 
     if Job.job_bookmark_options()[0][2:] in options:
-        raise RuntimeError("Using reserved arguments " + Job.job_bookmark_options()[0][2:])
+        raise RuntimeError(
+            f"Using reserved arguments {Job.job_bookmark_options()[0][2:]}"
+        )
 
     parser.add_argument(Job.job_bookmark_options()[0], choices =Job.job_bookmark_options()[1:], required = False)
     parser.add_argument(Job.continuation_options()[0], choices =Job.continuation_options()[1:], required = False)
 
     for option in Job.job_bookmark_range_options():
         if option[2:] in options:
-            raise RuntimeError("Using reserved arguments " + option)
+            raise RuntimeError(f"Using reserved arguments {option}")
         parser.add_argument(option, required=False)
 
     for option in Job.id_params()[1:]:
         if option in options:
-            raise RuntimeError("Using reserved arguments " + option)
+            raise RuntimeError(f"Using reserved arguments {option}")
         # TODO: Make these mandatory, for now for backward compatability making these optional, also not including JOB_NAME in the reserved parameters list.
         parser.add_argument(option, required=False)
 
     if Job.encryption_type_options()[0] in options:
-        raise RuntimeError("Using reserved arguments " + Job.encryption_type_options()[0])
+        raise RuntimeError(
+            f"Using reserved arguments {Job.encryption_type_options()[0]}"
+        )
     parser.add_argument(Job.encryption_type_options()[0], choices = Job.encryption_type_options()[1:])
 
     if Job.data_lineage_options()[0] in options:
-        raise RuntimeError("Using reserved arguments " + Job.data_lineage_options()[0])
+        raise RuntimeError(f"Using reserved arguments {Job.data_lineage_options()[0]}")
     parser.add_argument(Job.data_lineage_options()[0], required=False)
-        
+
     # TODO: Remove special handling for 'RedshiftTempDir' and 'TempDir' after TempDir is made mandatory for all Jobs
     # Remove 'RedshiftTempDir' and 'TempDir' from list of user supplied options
     options = [opt for opt in options if opt not in {'RedshiftTempDir', 'TempDir'}]
@@ -114,7 +119,7 @@ def getResolvedOptions(args, options):
     parser.add_argument('--TempDir', required=False)
 
     for option in options:
-        parser.add_argument('--' + option, required=True)
+        parser.add_argument(f'--{option}', required=True)
 
     parsed, extra = parser.parse_known_args(args[1:])
 
@@ -149,10 +154,9 @@ def getResolvedOptions(args, options):
            absent_range_option.append(option)
     if parsed_dict['job_bookmark_option']  == 'job-bookmark-pause':
         if len(absent_range_option) == 1:
-            raise RuntimeError("Missing option or value for "  +  absent_range_option[0])
-    else:
-        if len(absent_range_option) == 0:
-            raise RuntimeError("Invalid option(s)"  +  ' '.join(Job.job_bookmark_range_options()))
+            raise RuntimeError(f"Missing option or value for {absent_range_option[0]}")
+    elif not absent_range_option:
+        raise RuntimeError("Invalid option(s)"  +  ' '.join(Job.job_bookmark_range_options()))
 
     _global_args.update(parsed_dict)
 

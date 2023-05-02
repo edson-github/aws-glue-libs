@@ -39,7 +39,9 @@ class GlueTransform(object):
                  "defaultValue": "<String default value or None>"}, ...]
         Raises: NotImplementedError if not implemented by Transform
         '''
-        raise NotImplementedError("describeArgs method not implemented for Transform {}".format(cls.__name__))
+        raise NotImplementedError(
+            f"describeArgs method not implemented for Transform {cls.__name__}"
+        )
 
     @classmethod
     def describeReturn(cls):
@@ -50,7 +52,9 @@ class GlueTransform(object):
                 "description": "<description of output>"}
         Raises: NotImplementedError if not implemented by Transform
         '''
-        raise NotImplementedError("describeReturn method not implemented for Transform {}".format(cls.__name__))
+        raise NotImplementedError(
+            f"describeReturn method not implemented for Transform {cls.__name__}"
+        )
 
     @classmethod
     def describeTransform(cls):
@@ -60,7 +64,9 @@ class GlueTransform(object):
         Raises: NotImplementedError if not implemented by Transform
         '''
 
-        raise NotImplementedError("describeTransform method not implemented for Transform {}".format(cls.__name__))
+        raise NotImplementedError(
+            f"describeTransform method not implemented for Transform {cls.__name__}"
+        )
 
     @classmethod
     def describeErrors(cls):
@@ -71,7 +77,9 @@ class GlueTransform(object):
                  "description": "<description of error>"}]
         Raises: NotImplementedError if not implemented by Transform
         '''
-        raise NotImplementedError("describeErrors method not implemented for Transform {}".format(cls.__name__))
+        raise NotImplementedError(
+            f"describeErrors method not implemented for Transform {cls.__name__}"
+        )
 
     @classmethod
     def describe(cls):
@@ -89,4 +97,4 @@ class GlueTransform(object):
         return hash(tuple(sorted(self.__dict__.items())))
 
     def __repr__(self):
-        return "<Transform: {}>".format(self.name())
+        return f"<Transform: {self.name()}>"

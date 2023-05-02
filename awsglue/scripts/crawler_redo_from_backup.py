@@ -50,7 +50,10 @@ def crawler_redo_from_backup_options(args):
     else:
         import boto3
         glue_endpoint = DEFAULT_GLUE_ENDPOINT
-        glue = boto3.client('glue', endpoint_url="https://%s.%s.amazonaws.com" % (glue_endpoint, options.region))
+        glue = boto3.client(
+            'glue',
+            endpoint_url=f"https://{glue_endpoint}.{options.region}.amazonaws.com",
+        )
         crawler = glue.get_crawler(Name=options.crawler_name)['Crawler']
         database_name = crawler['DatabaseName']
 

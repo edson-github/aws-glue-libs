@@ -82,8 +82,7 @@ class Job:
             "}"
 
     def as_dict(self):
-        job_dict = {}
-        job_dict['command'] = self.command.as_dict()
+        job_dict = {'command': self.command.as_dict()}
         if len(self.connections.connections) > 0:
             job_dict['connections'] = self.connections.as_dict()
         job_dict['createdOn'] = self.createdOn
@@ -132,55 +131,61 @@ class GlueJobUtils:
         try:
             job.description = response_job['description']
         except KeyError:
-            logging.warning('description is missing in job response for job %s' % job.name)
+            logging.warning(f'description is missing in job response for job {job.name}')
 
         try:
             job.defaultArguments = response_job['defaultArguments']
         except KeyError:
-            logging.warning('defaultArguments is missing in job response for job %s' % job.name)
+            logging.warning(
+                f'defaultArguments is missing in job response for job {job.name}'
+            )
 
         try:
             job.logUri = response_job['logUri']
         except KeyError:
-            logging.warning('logUri is missing in job response for job %s' % job.name)
+            logging.warning(f'logUri is missing in job response for job {job.name}')
 
         try:
             job.role = response_job['role']
         except KeyError:
-            logging.warning('role is missing in job response for job %s' % job.name)
+            logging.warning(f'role is missing in job response for job {job.name}')
 
         try:
             execution_property_dict = response_job['executionProperty']
             job.executionProperty = ExecutionProperty(execution_property_dict['maxConcurrentRuns'])
         except KeyError:
-            logging.warning('executionProperty is missing in job response for job %s' % job.name)
+            logging.warning(
+                f'executionProperty is missing in job response for job {job.name}'
+            )
 
         try:
             command_dict = response_job['command']
             job.command = Command(command_dict['name'], command_dict['scriptLocation'])
         except KeyError:
-            logging.warning('command is missing in job response for job %s' % job.name)
+            logging.warning(f'command is missing in job response for job {job.name}')
 
         try:
             connections_dict = response_job['connections']
             job.connections = Connections(connections_dict['connections'])
         except KeyError:
-            logging.warning('connections is missing in job response for job %s' % job.name)
+            logging.warning(f'connections is missing in job response for job {job.name}')
 
         try:
             job.maxRetries = response_job['maxRetries']
         except KeyError:
-            logging.warning('maxRetries is missing in job response for job %s' % job.name)
+            logging.warning(f'maxRetries is missing in job response for job {job.name}')
 
         try:
             job.createdOn = response_job['createdOn']
         except KeyError:
-            logging.warning('createdOn is missing in job response for job %s' % job.name)
+            logging.warning(f'createdOn is missing in job response for job {job.name}')
 
         try:
             job.lastModifiedOn = response_job['lastModifiedOn']
         except KeyError:
-            logging.warning('lastModifiedOn is missing in job response for job %s' % job.name)
+            logging.warning(
+                f'lastModifiedOn is missing in job response for job {job.name}'
+            )
 
         return job
 
@@ -200,10 +205,14 @@ class GlueJobUtils:
 
     def _get_bucket_prefix_from_s3_url(self, s3_url):
         if not s3_url.startswith('s3://'):
-            raise Exception('s3 url for scriptLocation should start with s3:// but given %s' % s3_url)
+            raise Exception(
+                f's3 url for scriptLocation should start with s3:// but given {s3_url}'
+            )
         url_parts = s3_url[5:].split('/', 1)
-        if not len(url_parts) == 2:
-            raise Exception('s3 url for scriptLocation does not include a prefix: %s' % s3_url)
+        if len(url_parts) != 2:
+            raise Exception(
+                f's3 url for scriptLocation does not include a prefix: {s3_url}'
+            )
         if url_parts[1].endswith('/'):
             raise Exception('s3 url for scriptLocation should ot end with '/': %s' % s3_url)
         return {'bucket': url_parts[0], 'prefix': url_parts[1]}
